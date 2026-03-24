@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语音翻译</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin: 20px 0 10px;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 控制栏 */
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .lang-select {
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid #444;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .lang-select:focus { border-color: #3a7bd5; }
+
+        .arrow {
+            font-size: 1.4rem;
+            color: #3a7bd5;
+        }
+
+        /* 录音按钮 */
+        .mic-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #3a7bd5;
+            background: rgba(58, 123, 213, 0.1);
+            color: #3a7bd5;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px auto;
+            position: relative;
+        }
+        .mic-btn:hover {
+            background: rgba(58, 123, 213, 0.2);
+            transform: scale(1.05);
+        }
+        .mic-btn.recording {
+            border-color: #ff4757;
+            background: rgba(255, 71, 87, 0.15);
+            color: #ff4757;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 71, 87, 0); }
+        }
+
+        .mic-btn svg {
+            width: 32px;
+            height: 32px;
+            fill: currentColor;
+        }
+
+        .mic-label {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: -5px;
+        }
+
+        /* 文本区域 */
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .panels { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 200px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            transition: border-color 0.3s;
+        }
+        .panel:focus-within { border-color: #3a7bd5; }
+
+        .panel-label {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .panel-text {
+            width: 100%;
+            min-height: 140px;
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .panel-text::placeholder { color: #555; }
+
+        .result-text {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            min-height: 140px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .result-text.placeholder { color: #555; }
+
+        /* 翻译按钮 */
+        .translate-btn {
+            padding: 12px 32px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            align-self: center;
+        }
+        .translate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(58, 123, 213, 0.4);
+        }
+        .translate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 状态提示 */
+        .status {
+            text-align: center;
+            font-size: 0.85rem;
+            min-height: 20px;
+            transition: color 0.3s;
+        }
+        .status.error { color: #ff4757; }
+        .status.success { color: #2ed573; }
+        .status.info { color: #3a7bd5; }
+
+        /* 历史记录 */
+        .history-section {
+            margin-top: 10px;
+        }
+
+        .history-title {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #2a2a3e;
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 12px;
+            align-items: center;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .history-item:hover { background: rgba(255, 255, 255, 0.06); }
+        .history-item .arrow { font-size: 1rem; }
+        .history-original { color: #aaa; }
+        .history-translated { color: #e0e0e0; }
+
+        /* 不支持提示 */
+        .unsupported {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid #ff4757;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            color: #ff4757;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid #444;
+            color: #aaa;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    </style>
+</head>
+<body>
+
+<h1>语音翻译</h1>
+<p class="subtitle">点击麦克风说话，AI 帮你实时翻译</p>
+
+<div class="container">
+    <!-- 语言选择 -->
+    <div class="controls">
+        <select id="sourceLang" class="lang-select">
+            <option value="auto">自动检测</option>
+            {% for code, name in languages.items() %}
+            <option value="{{ code }}">{{ name }}</option>
+            {% endfor %}
+        </select>
+        <span class="arrow">→</span>
+        <select id="targetLang" class="lang-select">
+            {% for code, name in languages.items() %}
+            <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- 麦克风按钮 -->
+    <div id="micArea">
+        <button id="micBtn" class="mic-btn" title="点击开始录音">
+            <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        </button>
+        <p class="mic-label" id="micLabel">点击开始语音输入</p>
+    </div>
+
+    <!-- 文本面板 -->
+    <div class="panels">
+        <div class="panel">
+            <div class="panel-label">原文</div>
+            <textarea id="sourceText" class="panel-text" placeholder="语音识别结果将显示在这里，你也可以直接输入文字..."></textarea>
+        </div>
+        <div class="panel">
+            <div class="panel-label">译文</div>
+            <button class="copy-btn" id="copyBtn" style="display:none" title="复制译文">复制</button>
+            <div id="resultText" class="result-text placeholder">翻译结果将显示在这里...</div>
+        </div>
+    </div>
+
+    <!-- 翻译按钮 -->
+    <button id="translateBtn" class="translate-btn">翻译</button>
+
+    <!-- 状态 -->
+    <p id="status" class="status"></p>
+
+    <!-- 历史记录 -->
+    <div class="history-section" id="historySection" style="display:none">
+        <div class="history-title">翻译历史</div>
+        <div class="history-list" id="historyList"></div>
+    </div>
+</div>
+
+<script>
+    const micBtn = document.getElementById('micBtn');
+    const micLabel = document.getElementById('micLabel');
+    const sourceText = document.getElementById('sourceText');
+    const resultText = document.getElementById('resultText');
+    const translateBtn = document.getElementById('translateBtn');
+    const statusEl = document.getElementById('status');
+    const copyBtn = document.getElementById('copyBtn');
+    const targetLang = document.getElementById('targetLang');
+    const historySection = document.getElementById('historySection');
+    const historyList = document.getElementById('historyList');
+
+    let recognition = null;
+    let isRecording = false;
+
+    // ===== 语音识别初始化 =====
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'zh-CN';
+
+        let finalTranscript = '';
+
+        recognition.onstart = () => {
+            isRecording = true;
+            micBtn.classList.add('recording');
+            micLabel.textContent = '正在聆听... 点击停止';
+            setStatus('正在录音...', 'info');
+        };
+
+        recognition.onresult = (event) => {
+            let interim = '';
+            finalTranscript = '';
+            for (let i = 0; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interim += event.results[i][0].transcript;
+                }
+            }
+            sourceText.value = finalTranscript + interim;
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            if (event.error === 'not-allowed') {
+                setStatus('麦克风权限被拒绝，请在浏览器设置中允许麦克风访问', 'error');
+            } else if (event.error === 'no-speech') {
+                setStatus('未检测到语音，请再试一次', 'error');
+            } else {
+                setStatus(`语音识别错误: ${event.error}`, 'error');
+            }
+            stopRecording();
+        };
+
+        recognition.onend = () => {
+            if (isRecording) {
+                // 自动重启以保持连续录音
+                try { recognition.start(); } catch(e) { stopRecording(); }
+            }
+        };
+    } else {
+        // 浏览器不支持
+        document.getElementById('micArea').innerHTML =
+            '<div class="unsupported">您的浏览器不支持语音识别<br>请使用 Chrome / Edge 浏览器，或直接在文本框中输入文字</div>';
+    }
+
+    // 根据源语言切换识别语言
+    document.getElementById('sourceLang').addEventListener('change', (e) => {
+        const langMap = {
+            'auto': 'zh-CN', 'zh': 'zh-CN', 'en': 'en-US', 'ja': 'ja-JP',
+            'ko': 'ko-KR', 'fr': 'fr-FR', 'de': 'de-DE', 'es': 'es-ES',
+            'ru': 'ru-RU', 'pt': 'pt-BR', 'it': 'it-IT', 'ar': 'ar-SA',
+            'th': 'th-TH', 'vi': 'vi-VN'
+        };
+        if (recognition) {
+            recognition.lang = langMap[e.target.value] || 'zh-CN';
+        }
+    });
+
+    // ===== 录音控制 =====
+    micBtn.addEventListener('click', () => {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    });
+
+    function startRecording() {
+        if (!recognition) return;
+        sourceText.value = '';
+        try {
+            recognition.start();
+        } catch(e) {
+            // 可能已经在运行
+            recognition.stop();
+            setTimeout(() => recognition.start(), 100);
+        }
+    }
+
+    function stopRecording() {
+        isRecording = false;
+        if (recognition) {
+            try { recognition.stop(); } catch(e) {}
+        }
+        micBtn.classList.remove('recording');
+        micLabel.textContent = '点击开始语音输入';
+        if (sourceText.value.trim()) {
+            setStatus('语音识别完成', 'success');
+        } else {
+            setStatus('', '');
+        }
+    }
+
+    // ===== 翻译 =====
+    translateBtn.addEventListener('click', doTranslate);
+
+    // Ctrl+Enter 快捷键
+    sourceText.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+            doTranslate();
+        }
+    });
+
+    async function doTranslate() {
+        const text = sourceText.value.trim();
+        if (!text) {
+            setStatus('请先输入或录入文本', 'error');
+            return;
+        }
+
+        translateBtn.disabled = true;
+        translateBtn.textContent = '翻译中...';
+        resultText.textContent = '';
+        resultText.classList.add('placeholder');
+        copyBtn.style.display = 'none';
+        setStatus('正在翻译...', 'info');
+
+        try {
+            const resp = await fetch('/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: text,
+                    target_lang: targetLang.value
+                })
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok) {
+                resultText.textContent = data.translated;
+                resultText.classList.remove('placeholder');
+                copyBtn.style.display = 'block';
+                setStatus('翻译完成', 'success');
+                addHistory(text, data.translated);
+            } else {
+                setStatus(`翻译失败: ${data.error}`, 'error');
+                resultText.textContent = '翻译失败，请重试';
+            }
+        } catch (err) {
+            setStatus(`网络错误: ${err.message}`, 'error');
+            resultText.textContent = '网络错误，请检查后端服务是否运行';
+        } finally {
+            translateBtn.disabled = false;
+            translateBtn.textContent = '翻译';
+        }
+    }
+
+    // ===== 复制按钮 =====
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(resultText.textContent).then(() => {
+            copyBtn.textContent = '已复制!';
+            setTimeout(() => copyBtn.textContent = '复制', 1500);
+        });
+    });
+
+    // ===== 历史记录 =====
+    function addHistory(original, translated) {
+        historySection.style.display = 'block';
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+            <span class="history-original">${escapeHtml(original.substring(0, 80))}${original.length > 80 ? '...' : ''}</span>
+            <span class="arrow">→</span>
+            <span class="history-translated">${escapeHtml(translated.substring(0, 80))}${translated.length > 80 ? '...' : ''}</span>
+        `;
+        historyList.insertBefore(item, historyList.firstChild);
+
+        // 最多保留 20 条
+        while (historyList.children.length > 20) {
+            historyList.removeChild(historyList.lastChild);
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ===== 状态 =====
+    function setStatus(msg, type) {
+        statusEl.textContent = msg;
+        statusEl.className = 'status' + (type ? ' ' + type : '');
+    }
+</script>
+
+</body>
+</html>

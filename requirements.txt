@@ -1,0 +1,8 @@
+flask>=3.1
+anthropic>=0.86
+faster-whisper>=1.2
+deep-translator>=1.11
+imageio-ffmpeg>=0.6
+SpeechRecognition>=3.15
+pydub>=0.25
+python-dotenv>=1.2

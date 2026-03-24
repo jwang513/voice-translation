@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Voice Translator - Tab Audio",
+  "version": "1.0.0",
+  "description": "Capture tab audio, transcribe and translate in real-time",
+  "permissions": [
+    "tabCapture",
+    "offscreen",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Voice Translator"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "voice-translator",
+  "version": "1.0.0",
+  "description": "语音翻译应用 - 语音捕捉 + AI翻译",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "express": "^4.21.0"
+  }
+}

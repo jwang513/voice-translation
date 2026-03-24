@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 380px;
+      min-height: 300px;
+      font-family: -apple-system, "Segoe UI", sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 16px;
+    }
+    h1 {
+      font-size: 1.1rem;
+      text-align: center;
+      margin-bottom: 12px;
+      background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    select {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #0f0c29;
+      color: #e0e0e0;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .arrow { color: #3a7bd5; font-size: 1.1rem; }
+
+    .capture-btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px solid #3a7bd5;
+      background: rgba(58, 123, 213, 0.1);
+      color: #3a7bd5;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 12px;
+    }
+    .capture-btn:hover { background: rgba(58, 123, 213, 0.2); }
+    .capture-btn.recording {
+      border-color: #ff4757;
+      color: #ff4757;
+      background: rgba(255, 71, 87, 0.1);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.3); }
+      50% { box-shadow: 0 0 0 8px rgba(255, 71, 87, 0); }
+    }
+
+    .results {
+      max-height: 350px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .result-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+    }
+    .result-original {
+      color: #888;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #2a2a3e;
+    }
+    .result-translated {
+      color: #e0e0e0;
+      line-height: 1.5;
+    }
+    .status {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 8px;
+      min-height: 18px;
+    }
+    .status.error { color: #ff4757; }
+    .status.info { color: #3a7bd5; }
+    .empty-hint {
+      text-align: center;
+      color: #555;
+      font-size: 0.85rem;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tab Audio Translator</h1>
+
+  <div class="controls">
+    <select id="sourceLang">
+      <option value="en" selected>Source: English</option>
+      <option value="ja">Source: 日本語</option>
+      <option value="zh">Source: 中文</option>
+      <option value="ko">Source: 한국어</option>
+      <option value="fr">Source: Français</option>
+      <option value="de">Source: Deutsch</option>
+      <option value="es">Source: Español</option>
+      <option value="ru">Source: Русский</option>
+    </select>
+    <span class="arrow">→</span>
+    <select id="targetLang">
+      <option value="zh" selected>中文</option>
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+      <option value="fr">Français</option>
+      <option value="de">Deutsch</option>
+      <option value="es">Español</option>
+      <option value="ru">Русский</option>
+    </select>
+  </div>
+
+  <div style="display:flex;gap:8px;">
+    <button id="captureBtn" class="capture-btn" style="flex:1">Start Capture</button>
+    <button id="clearBtn" class="capture-btn" style="width:80px;font-size:0.8rem;border-color:#666;color:#888">Clear</button>
+  </div>
+
+  <div class="results" id="results">
+    <div class="empty-hint" id="emptyHint">
+      Click "Start Capture" to capture audio from the current tab
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+<script src="popup.js"></script>
+</body>
+</html>
