@@ -32,7 +32,17 @@ Create a `.env` file in the project folder:
 ANTHROPIC_API_KEY=your_api_key_here
 ```
 
-**3. Start the app**
+**3. Update the Python path in `start_translate.bat`**
+
+Open `start_translate.bat` and change this line to match your Anaconda environment:
+
+```bat
+C:\soft\anaconda\envs\mytest\python.exe "%~dp0app.py"
+```
+
+Replace `C:\soft\anaconda` with your Anaconda install path and `mytest` with your environment name.
+
+**4. Start the app**
 
 Double-click `start_translate.bat`
 
